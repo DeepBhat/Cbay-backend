@@ -52,6 +52,8 @@ class Listing(models.Model):
 
 
 class Category(models.Model):
+    class Meta:
+        verbose_name_plural = "categories"
     # validators
     def validate_category(name: str): 
         # TODO: Add the list of options for valid categories (apparel, school supplies, furniture, etc.)
