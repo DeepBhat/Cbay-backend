@@ -23,7 +23,7 @@ class User(models.Model):
     thumbs_up = PositiveIntegerField(default=0, null=False)
     thumbs_down = PositiveIntegerField(default=0, null=False)
     bio = CharField(max_length=5000, null=True)
-    classification = CharField(null=True, validators = [validate_classification])
+    classification = CharField(max_length=50, null=True, validators = [validate_classification])
 
     # Helper functions
     def __str__(self) -> str:
