@@ -9,11 +9,11 @@ class User(models.Model):
     # Validator functions
     def validate_edu_email(email: str):
         if email[-4:] != ".edu":
-            raise ValidationError(f"${email} is not a .edu email.")
+            raise ValidationError(f"{email} is not a .edu email.")
 
     def validate_classification(classification: str):
         if classification not in ('Freshman', 'Sophomore', 'Junior', 'Senior'):
-            raise ValidationError(f"{classification} has to be one of (Freshman, Sophomore, Junior, Senior). Check spelling and capitalization.")
+            raise ValidationError(f"Classification has to be one of (Freshman, Sophomore, Junior, Senior). Check spelling and capitalization.")
 
     # Fields
     email = EmailField(unique=True, null=False, validators=[validate_email, validate_edu_email])
@@ -22,7 +22,7 @@ class User(models.Model):
     university = CharField(max_length=50, null=False)
     thumbs_up = PositiveIntegerField(default=0, null=False)
     thumbs_down = PositiveIntegerField(default=0, null=False)
-    bio = CharField(max_length=5000, null=True)
+    bio = CharField(max_length=5000, null=True, blank=True)
     classification = CharField(max_length=50, null=True, validators = [validate_classification])
 
     # Helper functions
@@ -52,9 +52,10 @@ class Listing(models.Model):
 
 
 class Category(models.Model):
+    # cAtEgOrYs
     class Meta:
         verbose_name_plural = "categories"
-    # validators
+    # validators 
     def validate_category(name: str): 
         # TODO: Add the list of options for valid categories (apparel, school supplies, furniture, etc.)
         return
