@@ -33,6 +33,7 @@ class User(models.Model):
 class Listing(models.Model):   
     # Validator functions
     def validate_condition(condition: str):
+        # TODO: Add the list of options for the condition of the item (new, like new, used, etc.)
         return 
 
     # Fields
@@ -45,15 +46,35 @@ class Listing(models.Model):
     date_created = DateField()
     user = ForeignKey(User, on_delete=models.CASCADE)
 
+    # Helpers
+    def __str__(self) -> str:
+        return f"{self.item_name} @ {self.price} by {self.user}"
+
 
 class Category(models.Model):
+    # validators
+    def validate_category(name: str): 
+        # TODO: Add the list of options for valid categories (apparel, school supplies, furniture, etc.)
+        return
+
+    # Fields
     category_name = CharField(max_length=50)
     listing = ForeignKey(Listing, on_delete=models.CASCADE)
 
+    # Helpers
+    def __str__(self) -> str:
+        return f"{self.category_name} for Listing: {self.listing}"
+
 class Image(models.Model):
+    # Fields 
     image_url = URLField(unique=True)
     # models.CASCADE is not called on_delete because we want to preserve 
     # the image url. Images with listing=NULL can be deleted on the cloud
     # storage platform later, maybe with a periodic script.
     listing = ForeignKey(Listing, null=True, on_delete=models.SET_NULL)
+
+    # Helpers
+    def __str__(self) -> str:
+        return f"Image located at {self.image_url} for Listing: {self.listing}"
+
     
