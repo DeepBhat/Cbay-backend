@@ -137,14 +137,21 @@ class DeleteUser(graphene.Mutation):
 
 # Listing mutations
 # TODO: create listing mutations similar to user mutations
+# class CreateListing(graphene.Mutation)
+# class UpdateListing(graphene.Mutation)
+# class DeleteListing(graphene.Mutation)
+
 
 
 class Mutation(graphene.ObjectType):
     create_user = CreateUser.Field()
     update_user = UpdateUser.Field()
     delete_user = DeleteUser.Field()
+    # TODO: Uncomment the respective mount instance after creating the class.
+
     # create_listing = CreateListing.Field()
     # update_listing = UpdateListing.Field()
+    # delete_listing = DeleteListing.Field()
 
 
 # Creating the schema
