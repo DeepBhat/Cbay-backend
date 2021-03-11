@@ -121,6 +121,18 @@ class UpdateUser(graphene.Mutation):
         user_instance.save()
         return UpdateUser(ok=ok, user=user_instance)
 
+class DeleteUser(graphene.Mutation):
+    class Arguments:
+        id = graphene.Int(required=True)
+
+    ok = graphene.Boolean()
+
+    @staticmethod
+    def mutate(root, info, id):
+        ok = True
+        user_instance = User.objects.get(pk=id)
+        user_instance.delete()
+        return DeleteUser(ok=ok)
 
 
 # Listing mutations
@@ -130,6 +142,7 @@ class UpdateUser(graphene.Mutation):
 class Mutation(graphene.ObjectType):
     create_user = CreateUser.Field()
     update_user = UpdateUser.Field()
+    delete_user = DeleteUser.Field()
     # create_listing = CreateListing.Field()
     # update_listing = UpdateListing.Field()
 
