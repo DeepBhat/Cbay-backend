@@ -55,8 +55,8 @@ class UserInput(graphene.InputObjectType):
     first_name = graphene.String()   
     last_name = graphene.String()
     university = graphene.String()
-    thumbs_up = graphene.Int()
-    thumbs_down = graphene.Int()
+    thumbs_up = graphene.Int(default_value=0)
+    thumbs_down = graphene.Int(default_value=0)
     bio = graphene.String()
     classification = graphene.String()
 
@@ -94,9 +94,33 @@ class CreateUser(graphene.Mutation):
         user_instance.save()
         return CreateUser(ok=ok, user=user_instance)
 
-# class UpdateUser(graphene.Mutation):
-#     # TODO: add the update user mutation
-#     pass
+class UpdateUser(graphene.Mutation):
+    class Arguments:
+        id = graphene.Int(required=True)
+        input = UserInput(required=True)
+    
+    ok = graphene.Boolean()
+    user = graphene.Field(UserType)
+
+    @staticmethod
+    def mutate(root, info, id, input=None):
+        ok = False
+        user_instance = User.objects.get(pk=id)
+        if not user_instance:
+            return UpdateUser(ok=ok, user=None)
+        
+        ok = True
+        if input.email: user_instance.email = input.email
+        if input.first_name: user_instance.first_name = input.first_name
+        if input.last_name: user_instance.last_name = input.last_name
+        if input.university: user_instance.university = input.university
+        if input.thumbs_up: user_instance.thumbs_up = input.thumbs_up
+        if input.thumbs_down: user_instance.thumbs_down = input.thumbs_down
+        if input.bio: user_instance.bio = input.bio
+        if input.classification: user_instance.classification = input.classification
+        user_instance.save()
+        return UpdateUser(ok=ok, user=user_instance)
+
 
 
 # Listing mutations
@@ -105,7 +129,7 @@ class CreateUser(graphene.Mutation):
 
 class Mutation(graphene.ObjectType):
     create_user = CreateUser.Field()
-    # update_user = UpdateUser.Field()
+    update_user = UpdateUser.Field()
     # create_listing = CreateListing.Field()
     # update_listing = UpdateListing.Field()
 
