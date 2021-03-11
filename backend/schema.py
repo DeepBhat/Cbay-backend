@@ -94,9 +94,9 @@ class CreateUser(graphene.Mutation):
         user_instance.save()
         return CreateUser(ok=ok, user=user_instance)
 
-class UpdateUser(graphene.Mutation):
-    # TODO: add the update user mutation
-    pass
+# class UpdateUser(graphene.Mutation):
+#     # TODO: add the update user mutation
+#     pass
 
 
 # Listing mutations

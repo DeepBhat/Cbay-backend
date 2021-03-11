@@ -20,8 +20,8 @@ class User(models.Model):
     first_name = CharField(max_length=50, null=False)
     last_name = CharField(max_length=50, null=False)
     university = CharField(max_length=50, null=False)
-    thumbs_up = PositiveIntegerField(default=0, null=False)
-    thumbs_down = PositiveIntegerField(default=0, null=False)
+    thumbs_up = PositiveIntegerField(default=0)
+    thumbs_down = PositiveIntegerField(default=0)
     bio = CharField(max_length=5000, null=True, blank=True)
     # TODO: Add "choices" parameter to classification
     classification = CharField(max_length=50, null=True, validators = [validate_classification])
