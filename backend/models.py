@@ -23,6 +23,7 @@ class User(models.Model):
     thumbs_up = PositiveIntegerField(default=0, null=False)
     thumbs_down = PositiveIntegerField(default=0, null=False)
     bio = CharField(max_length=5000, null=True, blank=True)
+    # TODO: Add "choices" parameter to classification
     classification = CharField(max_length=50, null=True, validators = [validate_classification])
 
     # Helper functions
@@ -40,6 +41,7 @@ class Listing(models.Model):
     item_name = CharField(max_length=50, null=False)
     price = DecimalField(max_digits=6, decimal_places=2)
     negotiable = BooleanField(null=False)
+    # TODO: Add "choices" parameter to condition
     condition = CharField(max_length=50)
     description = CharField(max_length=5000, null=True)
     location = CharField(max_length=50)
@@ -48,7 +50,7 @@ class Listing(models.Model):
 
     # Helpers
     def __str__(self) -> str:
-        return f"{self.item_name} @ {self.price} by {self.user}"
+        return f"{self.item_name} by user: {self.user}"
 
 
 class Category(models.Model):
@@ -61,6 +63,7 @@ class Category(models.Model):
         return
 
     # Fields
+    # TODO: Add "choices" parameter to category_name
     category_name = CharField(max_length=50)
     listing = ForeignKey(Listing, on_delete=models.CASCADE)
 
@@ -78,6 +81,6 @@ class Image(models.Model):
 
     # Helpers
     def __str__(self) -> str:
-        return f"Image located at {self.image_url} for Listing: {self.listing}"
+        return f"{self.image_url} for Listing: {self.listing}"
 
     
