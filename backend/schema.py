@@ -339,9 +339,17 @@ class UpdateListing(graphene.Mutation):
         listing_instance.save()
 
         # Update the new images
+        # first set the current images to NULL
+        for image in Image.objects.filter(listing=listing_instance):
+            image.listing = None
+            image.save()
+
+        # then re-assign the new images
         if input.images:
             for image_url in input.images:
-                Image.objects.get_or_create(image_url=image_url, listing=listing_instance)
+                image, created = Image.objects.get_or_create(image_url=image_url)
+                image.listing = listing_instance
+                image.save()
         
         # Update the new categories
         if input.categories:
