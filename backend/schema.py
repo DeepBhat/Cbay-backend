@@ -352,6 +352,11 @@ class UpdateListing(graphene.Mutation):
                 image.save()
         
         # Update the new categories
+        # first delete the current categories
+        for category in Category.objects.filter(listing=listing_instance):
+            category.delete()
+
+        # then re-assign the new categories
         if input.categories:
             for category_name in input.categories:
                 Category.objects.get_or_create(category_name=category_name, listing=listing_instance)
