@@ -348,8 +348,19 @@ class UpdateListing(graphene.Mutation):
 
         return UpdateListing(ok=ok, listing=listing_instance)
 
-# class DeleteListing(graphene.Mutation):
-#     pass
+class DeleteListing(graphene.Mutation):
+    class Arguments:
+        id = graphene.Int(required=True)
+    
+    ok = graphene.Boolean()
+
+    @staticmethod
+    def mutate(root, info, id, input=None):
+        ok = True
+        listing_instance = Listing.objects.get(pk=id)
+        listing_instance.delete()
+        return DeleteListing(ok=ok)
+
 
 
 class Mutation(graphene.ObjectType):
