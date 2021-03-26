@@ -5,9 +5,7 @@ from graphene_django import DjangoObjectType
 
 from .models import Category, Image, Listing, User
 
-## ========== QUERIES =================
-# We specify the GraphQL Type for Graphene. But graphene_django
-# can create types out of Django models so it handles that for us.
+# ========== MODELS ===============
 class UserType(DjangoObjectType):
     class Meta:
         model = User
@@ -23,6 +21,11 @@ class ImageType(DjangoObjectType):
 class CategoryType(DjangoObjectType):
     class Meta:
         model = Category
+
+
+## ========== QUERIES =================
+# We specify the GraphQL Type for Graphene. But graphene_django
+# can create types out of Django models so it handles that for us.
 
 # Class to resolve queries made to GraphQL. Queries
 # are just the READ operations for all models. 
@@ -47,8 +50,8 @@ class Query(graphene.ObjectType):
     categories = graphene.List(CategoryType)
     images = graphene.List(ImageType)
 
-    user = graphene.Field(UserType, id=graphene.Int())
-    listing = graphene.Field(ListingType, id=graphene.Int(), item_name=graphene.String())
+    user = graphene.Field(UserType, id=graphene.Int(required=False, default_value=None), email=graphene.String(required=False, default_value=None))
+    listing = graphene.Field(ListingType, id=graphene.Int())
     category = graphene.Field(CategoryType, id=graphene.Int())
     image = graphene.Field(ImageType, id=graphene.Int())
 
@@ -122,9 +125,14 @@ class Query(graphene.ObjectType):
 
     def resolve_user(self, info, **kwargs):
         id = kwargs.get('id')
+        email = kwargs.get('email')
 
         if id is not None:
             return User.objects.get(pk=id)
+        elif email is not None:
+            result = User.objects.filter(email__exact=email)
+            if len(result) > 0:
+                return result[0]
         
         return None
 
@@ -289,9 +297,59 @@ class CreateListing(graphene.Mutation):
         # return the newly created instance
         return CreateListing(ok=ok, listing=listing_instance)
 
-# class UpdateListing(graphene.Mutation)
-# class DeleteListing(graphene.Mutation)
+class UpdateListing(graphene.Mutation):
+    class Arguments:
+        id = graphene.Int(required=True)
+        input = ListingInput(required=True)
 
+    ok = graphene.Boolean()
+    listing = graphene.Field(ListingType)
+
+    @staticmethod
+    def mutate(root, info, id, input=None):
+        ok = False
+        listing_instance = Listing.objects.get(pk=id)
+        if not listing_instance:
+            return UpdateListing(ok=ok, listing=None)
+
+        ok = True
+
+        # Update the respective fields
+        if input.item_name: listing_instance.item_name = input.item_name
+        if input.price: listing_instance.price = input.price
+        if input.negotiable: listing_instance.negotiable = input.negotiable
+        if input.condition: listing_instance.condition = input.condition
+        if input.description: listing_instance.description = input.description
+        if input.location: listing_instance.location = input.location
+        if input.date_created: listing_instance.date_created = input.date_created
+        
+        # Update the user if a new user ID is provided
+        if input.user_id:
+            new_user = User.objects.get(pk=input.user_id)
+            if not new_user:
+                ok = False
+                return UpdateListing(ok=ok, listing=None)
+            listing_instance.user = new_user
+
+        # save the updated instance
+        listing_instance.save()
+
+        # Update the new images
+        if input.images:
+            for image_url in input.images:
+                image = Image(image_url=image_url, listing=listing_instance)
+                image.save()
+        
+        # Update the new categories
+        if input.categories:
+            for category_name in input.categories:
+                category = Category(category_name=category_name, listing=listing_instance)
+                category.save()
+
+        return UpdateListing(ok=ok, listing=listing_instance)
+
+# class DeleteListing(graphene.Mutation):
+#     pass
 
 
 class Mutation(graphene.ObjectType):
@@ -301,7 +359,7 @@ class Mutation(graphene.ObjectType):
     # TODO: Uncomment the respective mount instance after creating the class.
 
     create_listing = CreateListing.Field()
-    # update_listing = UpdateListing.Field()
+    update_listing = UpdateListing.Field()
     # delete_listing = DeleteListing.Field()
 
 

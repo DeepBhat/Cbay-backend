@@ -23,7 +23,6 @@ class User(models.Model):
     thumbs_up = PositiveIntegerField(default=0)
     thumbs_down = PositiveIntegerField(default=0)
     bio = CharField(max_length=5000, null=True, blank=True)
-    # TODO: Add "choices" parameter to classification
     classification = CharField(max_length=50, null=True, validators = [validate_classification])
 
     #TODO: Add "Listings" field (One to Many)
@@ -43,14 +42,12 @@ class Listing(models.Model):
     item_name = CharField(max_length=50, null=False)
     price = DecimalField(max_digits=6, decimal_places=2)
     negotiable = BooleanField(null=False)
-    # TODO: Add "choices" parameter to condition
     condition = CharField(max_length=50)
     description = CharField(max_length=5000, null=True)
     location = CharField(max_length=50)
     date_created = DateField()
     user = ForeignKey(User, on_delete=models.CASCADE)
 
-    #TODO: Add "Categories" and "Images" fields (One to Many)
     # Helpers
     def __str__(self) -> str:
         return f"{self.item_name} by user: {self.user}"
@@ -66,7 +63,6 @@ class Category(models.Model):
         return
 
     # Fields
-    # TODO: Add "choices" parameter to category_name
     category_name = CharField(max_length=50)
     listing = ForeignKey(Listing, on_delete=models.CASCADE)
 
