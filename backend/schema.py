@@ -1,4 +1,5 @@
 import graphene
+from graphene.types.decimal import Decimal
 from graphene.types.scalars import String
 from graphene.types.structures import List
 from graphene_django import DjangoObjectType
@@ -176,6 +177,10 @@ class ListingInput(graphene.InputObjectType):
     images = graphene.List(of_type=String)
     categories = graphene.List(of_type=String)
 
+class ImageInput(graphene.InputObjectType):
+    images = graphene.List(of_type=String)
+    listing_id = graphene.Int()
+
 
 # USER mutations
 class CreateUser(graphene.Mutation):
@@ -248,7 +253,6 @@ class DeleteUser(graphene.Mutation):
 
 
 # Listing mutations
-# TODO: create listing mutations similar to user mutations
 class CreateListing(graphene.Mutation):
     # Pass in the input class created above to specify
     # that all the fields of the class are required arguments
@@ -257,7 +261,7 @@ class CreateListing(graphene.Mutation):
     
     # ok will be true if the mutation is successful
     ok = graphene.Boolean()
-    # create a user field to accept UserType
+    # listing type output field
     listing = graphene.Field(ListingType)
 
     @staticmethod
@@ -337,14 +341,12 @@ class UpdateListing(graphene.Mutation):
         # Update the new images
         if input.images:
             for image_url in input.images:
-                image = Image(image_url=image_url, listing=listing_instance)
-                image.save()
+                Image.objects.get_or_create(image_url=image_url, listing=listing_instance)
         
         # Update the new categories
         if input.categories:
             for category_name in input.categories:
-                category = Category(category_name=category_name, listing=listing_instance)
-                category.save()
+                Category.objects.get_or_create(category_name=category_name, listing=listing_instance)
 
         return UpdateListing(ok=ok, listing=listing_instance)
 
@@ -361,18 +363,67 @@ class DeleteListing(graphene.Mutation):
         listing_instance.delete()
         return DeleteListing(ok=ok)
 
+# Image mutations
+class CreateImages(graphene.Mutation):
+    class Arguments:
+        input = ImageInput(required=True)
+    
+    ok = graphene.Boolean()
+    # images list output
+    images = graphene.Field(graphene.List(of_type=ImageType))
+
+    @staticmethod
+    def mutate(root, info, input):
+        ok = True
+
+        # get the listing from the listing id
+        listing = Listing.objects.get(pk=input.listing_id)
+
+        # if listing does not exist, return an error
+        if not listing:
+            ok = False
+            return CreateImages(ok=ok, images=None)
+        
+        images_created = []
+
+        # create the images
+        for image_url in input.images:
+            image_instance =  Image(image_url=image_url, listing=listing)
+            image_instance.save()
+            images_created.append(image_instance)
+        
+        # return the created images
+        return CreateImages(ok=ok, images=images_created)
+
+class DeleteImages(graphene.Mutation):
+    class Arguments:
+        images = graphene.List(of_type=String, required=True)
+    
+    ok = graphene.Boolean()
+
+    @staticmethod
+    def mutate(root, info, images):
+        ok = True
+
+        # set the listing of all the image urls to null
+        for image_url in images:
+            image = Image.objects.get(image_url=image_url)
+            image.listing = None
+            image.save()
+
 
 
 class Mutation(graphene.ObjectType):
     create_user = CreateUser.Field()
     update_user = UpdateUser.Field()
     delete_user = DeleteUser.Field()
-    # TODO: Uncomment the respective mount instance after creating the class.
 
     create_listing = CreateListing.Field()
     update_listing = UpdateListing.Field()
-    # delete_listing = DeleteListing.Field()
+    delete_listing = DeleteListing.Field()
 
+    create_images = CreateImages.Field()
+    delete_images = DeleteImages.Field()
 
 # Creating the schema
 schema = graphene.Schema(query=Query, mutation=Mutation)
