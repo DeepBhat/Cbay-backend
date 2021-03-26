@@ -1,7 +1,9 @@
 import graphene
+from graphene.types.scalars import String
+from graphene.types.structures import List
 from graphene_django import DjangoObjectType
 
-from .models import Listing, User
+from .models import Category, Image, Listing, User
 
 ## ========== QUERIES =================
 # We specify the GraphQL Type for Graphene. But graphene_django
@@ -14,20 +16,109 @@ class ListingType(DjangoObjectType):
     class Meta:
         model = Listing
 
+class ImageType(DjangoObjectType):
+    class Meta:
+        model = Image
+
+class CategoryType(DjangoObjectType):
+    class Meta:
+        model = Category
+
 # Class to resolve queries made to GraphQL. Queries
 # are just the READ operations for all models. 
 class Query(graphene.ObjectType):
-    # TODO: add the other two models and queries for other two models
     users = graphene.List(UserType)
-    listings = graphene.List(ListingType)
+
+    # We wish to be able to filter the listings based on
+    # all of its parameters.
+    listings = graphene.List(ListingType, 
+    name=graphene.String(required=False, default_value=None),
+    maxPrice=graphene.Decimal(required=False,default_value=None),
+    minPrice=graphene.Decimal(required=False, default_value=None),
+    negotiable=graphene.Boolean(required=False,default_value=None),
+    condition=graphene.String(required=False,default_value=None),
+    location=graphene.String(required=False,default_value=None),
+    date_created=graphene.Date(required=False,default_value=None),
+    userID=graphene.Int(required=False,default_value=None),
+    university=graphene.String(required=False,default_value=None)
+    )
+
+
+    categories = graphene.List(CategoryType)
+    images = graphene.List(ImageType)
+
     user = graphene.Field(UserType, id=graphene.Int())
-    listing = graphene.Field(ListingType, id=graphene.Int())
+    listing = graphene.Field(ListingType, id=graphene.Int(), item_name=graphene.String())
+    category = graphene.Field(CategoryType, id=graphene.Int())
+    image = graphene.Field(ImageType, id=graphene.Int())
+
 
     def resolve_users(self, info, **kwargs):
         return User.objects.all()
 
     def resolve_listings(self, info, **kwargs):
-        return Listing.objects.all()
+        '''
+        Return istings filtered based off the optional parameters passed.
+        1. name (string): if the given name is contained in the item name
+        2. maxPrice (Decimal): if the item price is less than or equal to parameter
+        3. minPrice (Decimal): if the item price is greater than or equal to parameter
+        4. negotiable (Boolean): if the item is negotiable
+        5. condition (String): if the condition of the item matches the given condition
+        6. location (String): if the location of the item matches the given location
+        # TODO: add location filtering (within 1km, etc.)
+        7. dateCreated (date): if the item is created on the same date as the given parameter
+        8. #TODO: timeframe (time): if the item was created in the given timeframe
+        9. userID (int): if the user through the user ID created the listing
+        10. university (String): if the user's university matches the given university
+
+        If none of the parameters are passed, all of the listings will be returned
+        '''
+
+        # initialize the query set
+        listing_objects = Listing.objects
+
+        # parse the parameters
+        item_name = kwargs.get('name')
+        max_price = kwargs.get('maxPrice')
+        min_price = kwargs.get('minPrice')
+        negotiable = kwargs.get('negotiable')
+        condition = kwargs.get('negotiable')
+        location = kwargs.get('location')
+        date_created = kwargs.get('dateCreated')
+        user_id = kwargs.get('userID')
+        university = kwargs.get('university')
+
+        # if no parameters are passed, return all the listings
+        if not any([item_name, max_price, min_price, negotiable, condition, location, date_created, user_id, university]):
+            return Listing.objects.all()
+
+        # otherwise filter the query set
+        if item_name is not None:
+            listing_objects =  listing_objects.filter(item_name__contains=item_name)
+        if max_price is not None:
+            listing_objects = listing_objects.filter(price__lte=max_price)     
+        if min_price is not None:
+            listing_objects = listing_objects.filter(price__gte=min_price)
+        if negotiable is not None:
+            listing_objects = listing_objects.filter(negotiable=negotiable)
+        if condition is not None:
+            listing_objects = listing_objects.filter(condition=condition)
+        if location is not None:
+            listing_objects = listing_objects.filter(location=location)
+        if date_created is not None:
+            listing_objects = listing_objects.filter(date_created=date_created)
+        if user_id is not None:
+            listing_objects = listing_objects.filter(user__id=user_id)
+        if university is not None:
+            listing_objects = listing_objects.filter(user__university=university)
+
+        return listing_objects
+
+    def resolve_categories(self, info, **kwargs):
+        return Category.objects.all()
+    
+    def resolve_images(self, info, **kwargs):
+        return Image.objects.all()
 
     def resolve_user(self, info, **kwargs):
         id = kwargs.get('id')
@@ -42,8 +133,12 @@ class Query(graphene.ObjectType):
 
         if id is not None:
             return Listing.objects.get(id=id)
-
+        
         return None
+
+    def resolve_category(self, info, **kwargs):
+        id = kwargs.get('id')
+        
 
 ## =============== MUTATIONS =====================
 # Class to define what fields can be changed with the API.
@@ -61,8 +156,17 @@ class UserInput(graphene.InputObjectType):
     classification = graphene.String()
 
 class ListingInput(graphene.InputObjectType):
-    # TODO: fill the fields for this model
-    pass
+    id = graphene.ID()
+    item_name = graphene.String()
+    price = graphene.Decimal()
+    negotiable = graphene.Boolean()
+    condition = graphene.String()
+    description = graphene.String(default_value="")
+    location = graphene.String()
+    date_created = graphene.Date()
+    user_id = graphene.ID()
+    images = graphene.List(of_type=String)
+    categories = graphene.List(of_type=String)
 
 
 # USER mutations
@@ -137,7 +241,54 @@ class DeleteUser(graphene.Mutation):
 
 # Listing mutations
 # TODO: create listing mutations similar to user mutations
-# class CreateListing(graphene.Mutation)
+class CreateListing(graphene.Mutation):
+    # Pass in the input class created above to specify
+    # that all the fields of the class are required arguments
+    class Arguments:
+        input = ListingInput(required=True)
+    
+    # ok will be true if the mutation is successful
+    ok = graphene.Boolean()
+    # create a user field to accept UserType
+    listing = graphene.Field(ListingType)
+
+    @staticmethod
+    def mutate(root, info, input=None):
+        ok = True
+
+        # find the user with the given user id
+        user = User.objects.get(pk=input.user_id)
+
+        # If User does not exist, return an error
+        if not user:
+            ok = False
+            return CreateListing(ok=ok, listing=None)
+        
+        # Otherwise create the listing instance 
+        listing_instance = Listing(
+            item_name = input.item_name,
+            price = input.price,
+            negotiable = input.negotiable,
+            condition = input.condition,
+            description = input.condition,
+            location = input.location,
+            date_created = input.date_created,
+            user = user
+        )
+        listing_instance.save()
+        
+        # Now create images and categories for the listing
+        for image_url in input.images:
+            image = Image(image_url=image_url, listing=listing_instance)
+            image.save()
+
+        for category_name in input.categories:
+            category = Category(category_name=category_name, listing=listing_instance)
+            category.save()
+
+        # return the newly created instance
+        return CreateListing(ok=ok, listing=listing_instance)
+
 # class UpdateListing(graphene.Mutation)
 # class DeleteListing(graphene.Mutation)
 
@@ -149,7 +300,7 @@ class Mutation(graphene.ObjectType):
     delete_user = DeleteUser.Field()
     # TODO: Uncomment the respective mount instance after creating the class.
 
-    # create_listing = CreateListing.Field()
+    create_listing = CreateListing.Field()
     # update_listing = UpdateListing.Field()
     # delete_listing = DeleteListing.Field()
 

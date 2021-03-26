@@ -12,8 +12,8 @@ class User(models.Model):
             raise ValidationError(f"{email} is not a .edu email.")
 
     def validate_classification(classification: str):
-        if classification not in ('Freshman', 'Sophomore', 'Junior', 'Senior'):
-            raise ValidationError(f"Classification has to be one of (Freshman, Sophomore, Junior, Senior). Check spelling and capitalization.")
+        if classification not in ('Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate', 'PhD'):
+            raise ValidationError(f"Classification has to be one of (Freshman, Sophomore, Junior, Senior, Graduate, PhD). Check spelling and capitalization.")
 
     # Fields
     email = EmailField(unique=True, null=False, validators=[validate_email, validate_edu_email])
@@ -25,6 +25,8 @@ class User(models.Model):
     bio = CharField(max_length=5000, null=True, blank=True)
     # TODO: Add "choices" parameter to classification
     classification = CharField(max_length=50, null=True, validators = [validate_classification])
+
+    #TODO: Add "Listings" field (One to Many)
 
     # Helper functions
     def __str__(self) -> str:
@@ -48,6 +50,7 @@ class Listing(models.Model):
     date_created = DateField()
     user = ForeignKey(User, on_delete=models.CASCADE)
 
+    #TODO: Add "Categories" and "Images" fields (One to Many)
     # Helpers
     def __str__(self) -> str:
         return f"{self.item_name} by user: {self.user}"
