@@ -25,8 +25,6 @@ class User(models.Model):
     bio = CharField(max_length=5000, null=True, blank=True)
     classification = CharField(max_length=50, null=True, validators = [validate_classification])
 
-    #TODO: Add "Listings" field (One to Many)
-
     # Helper functions
     def __str__(self) -> str:
         return f"{self.email}: {self.first_name} {self.last_name}"
