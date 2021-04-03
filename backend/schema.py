@@ -4,7 +4,7 @@ from graphene.types.scalars import String
 from graphene.types.structures import List
 from graphene_django import DjangoObjectType
 
-from .models import Category, Image, Listing, User
+from .models import Category, Image, Listing, User, Chat
 
 # ========== MODELS ===============
 class UserType(DjangoObjectType):
@@ -22,6 +22,10 @@ class ImageType(DjangoObjectType):
 class CategoryType(DjangoObjectType):
     class Meta:
         model = Category
+
+class ChatType(DjangoObjectType):
+    class Meta:
+        model = Chat
 
 
 ## ========== QUERIES =================
@@ -50,6 +54,7 @@ class Query(graphene.ObjectType):
 
     categories = graphene.List(CategoryType)
     images = graphene.List(ImageType)
+    chats = graphene.List(ChatType, email=graphene.String(required=False, default_value=None), userID = graphene.ID(required=False, default_value=None))
 
     user = graphene.Field(UserType, id=graphene.Int(required=False, default_value=None), email=graphene.String(required=False, default_value=None))
     listing = graphene.Field(ListingType, id=graphene.Int())
@@ -124,6 +129,26 @@ class Query(graphene.ObjectType):
     def resolve_images(self, info, **kwargs):
         return Image.objects.all()
 
+    def resolve_chats(self, info, **kwargs):
+        ''' Return a list of chats a given user is in (through email or user ID)'''
+        user_id = kwargs.get('userID')
+        email = kwargs.get('email')
+
+        user = None
+
+        if user_id:
+            user = User.objects.get(pk=user_id)
+        elif email:
+            result = User.objects.filter(email__exact=email)
+            if len(result) > 0:
+                user = result[0]
+        
+        if user:
+            return user.chat_set.all()
+
+        return None
+
+
     def resolve_user(self, info, **kwargs):
         id = kwargs.get('id')
         email = kwargs.get('email')
@@ -181,6 +206,10 @@ class ImageInput(graphene.InputObjectType):
     images = graphene.List(of_type=String)
     listing_id = graphene.Int()
 
+class ChatInput(graphene.InputObjectType):
+    chat_id = graphene.String()
+    user_emails = graphene.List(of_type=String)
+    
 
 # USER mutations
 class CreateUser(graphene.Mutation):
@@ -424,6 +453,31 @@ class DeleteImages(graphene.Mutation):
             image.listing = None
             image.save()
 
+# Chat mutations
+class CreateChat(graphene.Mutation):
+    class Arguments:
+        input = ChatInput(required=True)
+    
+    ok = graphene.Boolean()
+    chat = graphene.Field(ChatType)
+
+    @staticmethod
+    def mutate(root, info, input=None):
+        ok = True
+
+        if len(input.user_emails) < 2:
+            return CreateChat(ok=False, chat=None)
+
+        chat_instance = Chat(chat_id = input.chat_id)
+        chat_instance.save()
+
+        for user_email in input.user_emails:
+            user = User.objects.filter(email__exact=user_email)[0]
+            chat_instance.users.add(user)
+            
+        
+        return CreateChat(ok=ok, chat=chat_instance)
+        
 
 
 class Mutation(graphene.ObjectType):
@@ -437,6 +491,8 @@ class Mutation(graphene.ObjectType):
 
     create_images = CreateImages.Field()
     delete_images = DeleteImages.Field()
+
+    creat_chat = CreateChat.Field()
 
 # Creating the schema
 schema = graphene.Schema(query=Query, mutation=Mutation)

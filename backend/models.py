@@ -3,6 +3,7 @@ from django.db.models.fields import BooleanField, CharField, DateField, DecimalF
 from django.db.models import ForeignKey
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db.models.fields.related import ManyToManyField
 
 
 class User(models.Model):
@@ -44,11 +45,12 @@ class Listing(models.Model):
     description = CharField(max_length=5000, null=True)
     location = CharField(max_length=50)
     date_created = DateField()
+    sold = BooleanField(default=False)
     user = ForeignKey(User, on_delete=models.CASCADE)
 
     # Helpers
     def __str__(self) -> str:
-        return f"{self.item_name} by user: {self.user}"
+        return f"{self.item_name} by user: {self.user.email}"
 
 
 class Category(models.Model):
@@ -80,4 +82,13 @@ class Image(models.Model):
     def __str__(self) -> str:
         return f"{self.image_url} for Listing: {self.listing}"
 
-    
+class Chat(models.Model):
+    # Fields
+    chat_id = CharField(max_length=50, unique=True)
+    # models.SET_NULL to keep the chats with a deleted user
+    # if one of the users is null, that means the user is deleted
+    users = ManyToManyField(User)
+
+    # Helpers
+    def __str__(self) -> str:
+        return f"chat {self.chat_id} between {self.users}"
