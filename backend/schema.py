@@ -311,7 +311,7 @@ class CreateListing(graphene.Mutation):
             price = input.price,
             negotiable = input.negotiable,
             condition = input.condition,
-            description = input.condition,
+            description = input.description,
             location = input.location,
             date_created = input.date_created,
             user = user
