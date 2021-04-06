@@ -92,3 +92,11 @@ class Chat(models.Model):
     # Helpers
     def __str__(self) -> str:
         return f"chat {self.chat_id} between {self.users}"
+
+
+class Transaction(models.Model): 
+    # Fields 
+    buyer = CharField(max_length=50)
+    seller = CharField(max_length=50)
+    date_sold = DateField()
+    # listing = ForeignKey(Listing, null=True, on_delete=models.SET_NULL)

@@ -4,7 +4,7 @@ from graphene.types.scalars import String
 from graphene.types.structures import List
 from graphene_django import DjangoObjectType
 
-from .models import Category, Image, Listing, User, Chat
+from .models import Category, Image, Listing, User, Chat, Transaction
 
 # ========== MODELS ===============
 class UserType(DjangoObjectType):
@@ -26,6 +26,10 @@ class CategoryType(DjangoObjectType):
 class ChatType(DjangoObjectType):
     class Meta:
         model = Chat
+
+class TransactionType(DjangoObjectType):
+    class Meta: 
+        model = Transaction
 
 
 ## ========== QUERIES =================
@@ -214,6 +218,13 @@ class ImageInput(graphene.InputObjectType):
 class ChatInput(graphene.InputObjectType):
     chat_id = graphene.String()
     user_emails = graphene.List(of_type=String)
+
+class TransactionInput(graphene.InputObjectType):
+    id = graphene.ID()
+    buyer = graphene.String()
+    seller = graphene.String()
+    date_sold = graphene.Date()
+
     
 
 # USER mutations
@@ -280,11 +291,9 @@ class DeleteUser(graphene.Mutation):
 
     @staticmethod
     def mutate(root, info, id):
-        ok = True
         user_instance = User.objects.get(pk=id)
         user_instance.delete()
         return DeleteUser(ok=ok)
-
 
 # Listing mutations
 class CreateListing(graphene.Mutation):
@@ -484,7 +493,63 @@ class CreateChat(graphene.Mutation):
             
         
         return CreateChat(ok=ok, chat=chat_instance)
+
+# Transaction mutations 
+class CreateTransaction(graphene.Mutation):
+    class Arguments:
+        input = TransactionInput(required=True)
+
+    ok = graphene.Boolean()
+    transaction = graphene.Field(TransactionType)
+
+    @staticmethod
+    def mutate(root, info, input=None): 
+        ok = True
+        transaction_instance = Transaction(
+            buyer = input.buyer,
+            seller = input.seller, 
+            date_sold = input.date_sold
+        )
+        transaction_instance.save()
+
+        return CreateTransaction(ok=ok, transaction=transaction_instance)
+
+class UpdateTransaction(graphene.Mutation):
+    class Arguments:
+        id = graphene.Int(required=True)
+        input = TransactionInput(required=True)
+    
+    ok = graphene.Boolean()
+    transaction = graphene.Field(TransactionType)
+
+    @staticmethod
+    def mutate(root, info, id, input=None):
+        ok = True
+        transaction_instance = Transaction.objects.get(pk=id)
+        if not transaction_instance:
+            return UpdateTransaction(ok=ok, transaction=None)
+
         
+        if input.buyer: transaction_instance.buyer = input.buyer
+        if input.seller: transaction_instance.seller = input.seller
+        if input.date_sold: transaction_instance.date_sold = input.date_sold
+        transaction_instance.save()
+        return UpdateTransaction(ok=ok, transaction=transaction_instance)
+
+class DeleteTransaction(graphene.Mutation): 
+    class Arguments:
+        id = graphene.Int(required=True)
+
+    ok = graphene.Boolean()
+    
+    @staticmethod
+    def mutate(root, info, id): 
+        transaction_instance = Transaction.objects.get(pk=id)
+        transaction_instance.delete()
+        ok = True
+        return DeleteTransaction(ok=ok)
+
+
 
 
 class Mutation(graphene.ObjectType):
@@ -500,6 +565,10 @@ class Mutation(graphene.ObjectType):
     delete_images = DeleteImages.Field()
 
     creat_chat = CreateChat.Field()
+
+    create_transaction = CreateTransaction.Field()
+    update_transaction= UpdateTransaction.Field()
+    delete_transaction = DeleteTransaction.Field(0)
 
 # Creating the schema
 schema = graphene.Schema(query=Query, mutation=Mutation)
