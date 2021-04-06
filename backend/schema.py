@@ -47,6 +47,7 @@ class Query(graphene.ObjectType):
     condition=graphene.String(required=False,default_value=None),
     location=graphene.String(required=False,default_value=None),
     date_created=graphene.Date(required=False,default_value=None),
+    sold=graphene.Boolean(required=False,default_value=None),
     userID=graphene.Int(required=False,default_value=None),
     university=graphene.String(required=False,default_value=None)
     )
@@ -94,6 +95,7 @@ class Query(graphene.ObjectType):
         condition = kwargs.get('negotiable')
         location = kwargs.get('location')
         date_created = kwargs.get('dateCreated')
+        sold = kwargs.get('sold')
         user_id = kwargs.get('userID')
         university = kwargs.get('university')
 
@@ -116,6 +118,8 @@ class Query(graphene.ObjectType):
             listing_objects = listing_objects.filter(location=location)
         if date_created is not None:
             listing_objects = listing_objects.filter(date_created=date_created)
+        if sold is not None:
+            listing_objects = listing_objects.filter(sold=sold)
         if user_id is not None:
             listing_objects = listing_objects.filter(user__id=user_id)
         if university is not None:
@@ -198,6 +202,7 @@ class ListingInput(graphene.InputObjectType):
     description = graphene.String(default_value="")
     location = graphene.String()
     date_created = graphene.Date()
+    sold = graphene.Boolean(default_value=False)
     user_id = graphene.ID()
     images = graphene.List(of_type=String)
     categories = graphene.List(of_type=String)
@@ -314,6 +319,7 @@ class CreateListing(graphene.Mutation):
             description = input.description,
             location = input.location,
             date_created = input.date_created,
+            sold = input.sold,
             user = user
         )
         listing_instance.save()
@@ -355,6 +361,7 @@ class UpdateListing(graphene.Mutation):
         if input.description: listing_instance.description = input.description
         if input.location: listing_instance.location = input.location
         if input.date_created: listing_instance.date_created = input.date_created
+        if input.sold: listing_instance.sold = input.sold
         
         # Update the user if a new user ID is provided
         if input.user_id:
