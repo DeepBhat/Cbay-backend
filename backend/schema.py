@@ -3,6 +3,7 @@ from graphene.types.decimal import Decimal
 from graphene.types.scalars import String
 from graphene.types.structures import List
 from graphene_django import DjangoObjectType
+from datetime import datetime, timedelta
 
 from .models import Category, Image, Listing, User, Chat
 
@@ -45,8 +46,10 @@ class Query(graphene.ObjectType):
     minPrice=graphene.Decimal(required=False, default_value=None),
     negotiable=graphene.Boolean(required=False,default_value=None),
     condition=graphene.String(required=False,default_value=None),
+    categories=graphene.List(of_type=String, required=False, default_value=None),
     location=graphene.String(required=False,default_value=None),
     date_created=graphene.Date(required=False,default_value=None),
+    timeframe=graphene.Int(required=False, default_value=None),
     sold=graphene.Boolean(required=False,default_value=None),
     userID=graphene.Int(required=False,default_value=None),
     university=graphene.String(required=False,default_value=None)
@@ -77,9 +80,10 @@ class Query(graphene.ObjectType):
         6. location (String): if the location of the item matches the given location
         # TODO: add location filtering (within 1km, etc.)
         7. dateCreated (date): if the item is created on the same date as the given parameter
-        8. #TODO: timeframe (time): if the item was created in the given timeframe
+        8. timeframe (hours): if the item was created in the given timeframe
         9. userID (int): if the user through the user ID created the listing
         10. university (String): if the user's university matches the given university
+        11. categories (Array of strings): if any of the listing's categories matches any of the given categories.
 
         If none of the parameters are passed, all of the listings will be returned
         '''
@@ -92,25 +96,27 @@ class Query(graphene.ObjectType):
         max_price = kwargs.get('maxPrice')
         min_price = kwargs.get('minPrice')
         negotiable = kwargs.get('negotiable')
-        condition = kwargs.get('negotiable')
+        condition = kwargs.get('condition')
+        categories = kwargs.get('categories')
         location = kwargs.get('location')
         date_created = kwargs.get('dateCreated')
+        timeframe = kwargs.get('timeframe')
         sold = kwargs.get('sold')
         user_id = kwargs.get('userID')
         university = kwargs.get('university')
 
         # if no parameters are passed, return all the listings
-        if not any([item_name, max_price, min_price, negotiable, condition, location, date_created, user_id, university]):
-            return Listing.objects.all()
+        if not any([item_name, max_price, min_price, negotiable, condition, location, date_created, user_id, university, categories]):
+            return Listing.objects.order_by('-date_created').all()
 
         # otherwise filter the query set
         if item_name is not None:
-            listing_objects =  listing_objects.filter(item_name__contains=item_name)
+            listing_objects =  listing_objects.filter(item_name__icontains=item_name)
         if max_price is not None:
             listing_objects = listing_objects.filter(price__lte=max_price)     
         if min_price is not None:
             listing_objects = listing_objects.filter(price__gte=min_price)
-        if negotiable is not None:
+        if negotiable is True: 
             listing_objects = listing_objects.filter(negotiable=negotiable)
         if condition is not None:
             listing_objects = listing_objects.filter(condition=condition)
@@ -118,14 +124,19 @@ class Query(graphene.ObjectType):
             listing_objects = listing_objects.filter(location=location)
         if date_created is not None:
             listing_objects = listing_objects.filter(date_created=date_created)
+        if timeframe is not None:
+            time_threshold = datetime.now() - timedelta(hours=timeframe)
+            listing_objects = listing_objects.filter(date_created__gte=time_threshold)
         if sold is not None:
             listing_objects = listing_objects.filter(sold=sold)
         if user_id is not None:
             listing_objects = listing_objects.filter(user__id=user_id)
         if university is not None:
-            listing_objects = listing_objects.filter(user__university=university)
+            listing_objects = listing_objects.filter(user__university__icontains=university)
+        if categories is not None and len(categories) > 0:
+            listing_objects = listing_objects.filter(category__category_name__in=categories)
 
-        return listing_objects
+        return listing_objects.order_by('-date_created').distinct()
 
     def resolve_categories(self, info, **kwargs):
         return Category.objects.all()
