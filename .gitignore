@@ -119,3 +119,4 @@ GitHub.sublime-settings
 !.vscode/extensions.json 
 .history
 secret_key.txt
+admin_creds.txt
