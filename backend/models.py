@@ -1,10 +1,10 @@
 from django.db import models
-from django.db.models.fields import BooleanField, CharField, DateField, DecimalField, EmailField, PositiveIntegerField, URLField
+from django.db.models.fields import BooleanField, CharField, DateField, DateTimeField, DecimalField, EmailField, PositiveIntegerField, URLField
 from django.db.models import ForeignKey
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db.models.fields.related import ManyToManyField
-
+from datetime import datetime
 
 class User(models.Model):
     # Validator functions
@@ -44,7 +44,7 @@ class Listing(models.Model):
     condition = CharField(max_length=50)
     description = CharField(max_length=5000, null=True)
     location = CharField(max_length=50)
-    date_created = DateField()
+    date_created = DateTimeField(default=datetime.now())
     sold = BooleanField(default=False)
     user = ForeignKey(User, on_delete=models.CASCADE)
 

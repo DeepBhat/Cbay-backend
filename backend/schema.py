@@ -48,7 +48,7 @@ class Query(graphene.ObjectType):
     condition=graphene.String(required=False,default_value=None),
     categories=graphene.List(of_type=String, required=False, default_value=None),
     location=graphene.String(required=False,default_value=None),
-    date_created=graphene.Date(required=False,default_value=None),
+    date_created=graphene.DateTime(required=False,default_value=None),
     timeframe=graphene.Int(required=False, default_value=None),
     sold=graphene.Boolean(required=False,default_value=None),
     userID=graphene.Int(required=False,default_value=None),
@@ -212,7 +212,7 @@ class ListingInput(graphene.InputObjectType):
     condition = graphene.String()
     description = graphene.String(default_value="")
     location = graphene.String()
-    date_created = graphene.Date()
+    date_created = graphene.DateTime()
     sold = graphene.Boolean(default_value=False)
     user_id = graphene.ID()
     images = graphene.List(of_type=String)
