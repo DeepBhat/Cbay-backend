@@ -108,8 +108,9 @@ class Query(graphene.ObjectType):
         user_email = kwargs.get('userEmail')
 
         # if no parameters are passed, return all the listings
-        if not any([item_name, max_price, min_price, negotiable, condition, location, date_created, user_id, university, categories, user_email]):
+        if not any([item_name, max_price, min_price, negotiable, condition, location, date_created, user_id, university, categories, user_email]) and sold is None:
             return Listing.objects.order_by('-date_created').all()
+
 
         # otherwise filter the query set
         if item_name is not None:
@@ -376,7 +377,7 @@ class UpdateListing(graphene.Mutation):
         if input.description: listing_instance.description = input.description
         if input.location: listing_instance.location = input.location
         if input.date_created: listing_instance.date_created = input.date_created
-        if input.sold: listing_instance.sold = input.sold
+        if input.sold is not None: listing_instance.sold = input.sold
         
         # Update the user if a new user ID is provided
         if input.user_id:
