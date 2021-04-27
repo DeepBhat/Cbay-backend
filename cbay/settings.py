@@ -64,9 +64,11 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:4200',
+    'https://cbay-tamu.herokuapp.com/admin'
 ] # If this is used, then not need to use `CORS_ORIGIN_ALLOW_ALL = True`
 CORS_ORIGIN_REGEX_WHITELIST = [
     'http://localhost:4200',
+    'https://cbay-tamu.herokuapp.com/admin'
 ]
 
 ROOT_URLCONF = 'cbay.urls'
