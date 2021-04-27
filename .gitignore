@@ -120,3 +120,5 @@ GitHub.sublime-settings
 .history
 secret_key.txt
 admin_creds.txt
+backend-env/
+backend/migrations/*
