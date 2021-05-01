@@ -247,6 +247,11 @@ class CreateUser(graphene.Mutation):
     @staticmethod
     def mutate(root, info, input=None):
         ok = True
+        # check if the account is an edu email
+        if input.email[-4:] != ".edu":
+            ok = False
+            return CreateUser(ok=ok, user=None)
+
         user_instance = User(
             email = input.email,
             first_name = input.first_name,
